@@ -41,7 +41,7 @@ class JsonReader(Reader):
         """
 
         """
-        model_fields = self.model_parser.resolve_models(
+        model_fields = self.metadata.model_parser.resolve_models(
             self._json.model_info.names).get('fields', {})
         model_json_ids = list(model_fields.keys())
         model_field_names = list(model_fields.values())

@@ -34,7 +34,7 @@ import six
 from jsonalchemy.utils import try_to_eval
 
 from .errors import ReaderException
-from .parser import FieldParser, ModelParser
+from .parser import ModelParser
 from .registry import MetaData
 
 
@@ -44,6 +44,7 @@ def split_blob(blob, master_format, slice_size=0, metadata=None, **kwargs):
     :params blob: todo
     :params master_format: todo
     :params slice_size: todo
+    :param metadata: required model's metadata
     :params kwargs: todo
     :returns: todo
     """
@@ -74,6 +75,7 @@ def translate(blob, json_class=None, master_format='json', metadata=None,
     :param json_class: Any subclass of
         :class:`~jsonalchemy.wrappers.SmartJson`
     :param master_format: Master format of the input blob.
+    :param metadata: required model's metadata
     :param kwargs: parameter to pass to json_class
 
     :return: New object of ``json_class`` type containing the result of the
@@ -95,7 +97,7 @@ def translate(blob, json_class=None, master_format='json', metadata=None,
     cls = metadata.readers[master_format]
     reader = cls(json, blob=blob, metadata=metadata, **kwargs)
     # fill up with all possible fields
-    fields = reader.model_parser.resolve_models(
+    fields = reader.metadata.model_parser.resolve_models(
         json.model_info.names).get('fields')
 
     reader.add(fields, blob, metadata=metadata, fetch_model_info=True)
@@ -117,8 +119,8 @@ class Reader(object):  # pylint: disable=R0921
         # FIXME
         self._json._reader = self
 
-        self.model_parser = ModelParser(self.metadata)
-        self.field_parser = self.model_parser.field_parser
+        self.metadata.model_parser = ModelParser(self.metadata)
+        self.field_parser = self.metadata.model_parser.field_parser
 
         self._json.bind(metadata)
 
@@ -150,7 +152,7 @@ class Reader(object):  # pylint: disable=R0921
         if isinstance(fields, six.string_types):
             fields = (fields, )
         if isinstance(fields, (list, tuple)):
-            model_fields = self.model_parser.resolve_models(
+            model_fields = self.metadata.model_parser.resolve_models(
                 self._json.model_info.names).get('fields')
             fields = dict(
                 (field_name, model_fields.get(field_name, field_name))
@@ -173,11 +175,10 @@ class Reader(object):  # pylint: disable=R0921
         :param set_default_value: If set to ``True`` looks for the default
             value if any and sets it.
         """
-        reader = None
         json_id = None
         if field not in self._json.meta_metadata:
             # We don't have any meta_metadata, look for it.
-            json_id = self.model_parser.resolve_models(
+            json_id = self.metadata.model_parser.resolve_models(
                 self._json.model_info)['fields'].get(field, field)
             self._json['__meta_metadata__'][field] = self._find_field_metadata(
                 json_id, field)
@@ -240,14 +241,14 @@ class Reader(object):  # pylint: disable=R0921
             self._json['__meta_metadata__']['__model_info__']['names'] = \
                 self._guess_model_from_input()
 
-        model = self.model_parser.resolve_models(
+        model = self.metadata.model_parser.resolve_models(
             self._json.model_info.names)
 
         for key, value in six.iteritems(model):
             if key in ('fields', 'bases'):
                 continue
-            self.model_parser.parser_extensions()[key].evaluate(self._json,
-                                                                value)
+            self.metadata.model_parser.parser_extensions()[key].evaluate(
+                self._json, value)
 
     def _guess_model_from_input(self):
         """Dummy method to guess the model of a given input.

@@ -53,7 +53,7 @@ class Package(object):
 
     def __init__(self, package):
         if not isinstance(package, six.string_types):
-            package = module.__path__
+            package = package.__name__
         self.package = package
 
     def _find(self, name):

@@ -26,9 +26,6 @@ import six
 from collections import MutableMapping
 from six import iteritems
 
-from .parser import ModelParser
-from .reader import Reader
-
 
 class SmartDict(object):
 
@@ -323,6 +320,7 @@ class SmartJson(SmartDict):
         super(SmartJson, self).__init__(json)
         self._dict_bson = SmartDict()
         self._metadata = metadata
+        self._model_parser = None
 
         if not json or '__meta_metadata__' not in json:
             model_names = kwargs.get('model', ['__default__', ])
@@ -647,9 +645,10 @@ class SmartJson(SmartDict):
         if validator is None:
             from .validator import Validator as validator
         schema = dict()
-        model_fields = ModelParser.resolve_models(
+        model_fields = self.metadata.model_parser.resolve_models(
             self.model_info.names,
-            self.additional_info.namespace).get('fields', {})
+            # self.additional_info.namespace
+        ).get('fields', {})
         for field in self.keys():
             if not field == '__meta_metadata__' and \
                     field not in model_fields and \
@@ -657,8 +656,10 @@ class SmartJson(SmartDict):
                 model_fields[field] = self.meta_metadata[field]['json_id']
         for json_id in model_fields.keys():
             try:
-                schema.update(self.metadata.field_definitions[json_id].get(
-                    'schema', {}))
+                schema.update(
+                    self.metadata.model_parser.field_parser.
+                    field_definitions[json_id].get(
+                        'schema', {}))
             except (TypeError, KeyError):
                 pass
         _validator = validator(schema=schema)

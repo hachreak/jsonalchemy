@@ -59,8 +59,8 @@ class TestJSONReader(TestCase):
 
     def setUp(self):
         self.metadata = MetaData(['jsonalchemy.jsonext', 'testext'])
-        self.model_parser = ModelParser(self.metadata)
-        self.field_parser = self.model_parser.field_parser
+        self.metadata.model_parser = ModelParser(self.metadata)
+        self.field_parser = self.metadata.model_parser.field_parser
 
     def test_json_reader(self):
         """JSONAlchemy - Json reader"""
@@ -121,8 +121,8 @@ class TestMarcReader(TestCase):
 
     def setUp(self):
         self.metadata = MetaData(['jsonalchemy.jsonext', 'testext'])
-        self.model_parser = ModelParser(self.metadata)
-        self.field_parser = self.model_parser.field_parser
+        self.metadata.model_parser = ModelParser(self.metadata)
+        self.field_parser = self.metadata.model_parser.field_parser
 
     def test_marcxml_preprocess(self):
         """JSONAlchemy - intermediate structure from marc xml"""
