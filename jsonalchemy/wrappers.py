@@ -647,9 +647,10 @@ class SmartJson(SmartDict):
         if validator is None:
             from .validator import Validator as validator
         schema = dict()
-        model_fields = ModelParser.resolve_models(
+        model_fields = self.metadata.model_parser.resolve_models(
             self.model_info.names,
-            self.additional_info.namespace).get('fields', {})
+            # self.additional_info.namespace).get('fields', {}
+        )
         for field in self.keys():
             if not field == '__meta_metadata__' and \
                     field not in model_fields and \
